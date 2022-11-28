@@ -1,13 +1,21 @@
+import { useRef } from "react";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import NavDropdown from "react-bootstrap/NavDropdown";
-
 // import { Link } from "react-router-dom";
 
-function NavBar({ logOut }) {
+
+function NavBar({ logOut, handleSearch, type }) {
+
+  const ref = useRef();
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    type ? handleSearch(ref.current.value, '') : handleSearch('', ref.current.value)
+    // console.log(ref.current.value);
+  }
   return (
     <Navbar bg="dark" expand="lg" variant = 'dark'>
       <Container fluid>
@@ -38,20 +46,25 @@ function NavBar({ logOut }) {
                 Something else here
               </NavDropdown.Item> */}
             </NavDropdown>
-            <Nav.Link href="#" disabled>
-              Link
+            <Nav.Link href="/everything">
+              Everything
+            </Nav.Link>
+            <Nav.Link href="/sources">
+              Sources
             </Nav.Link>
           </Nav>
-          <Form className="d-flex">
+          <Form className="d-flex" onSubmit={handleSubmit}>
             <Form.Control 
               type="search"
-              placeholder="Search"
+              placeholder={type ? "Search Country" : "Search anything"}
               className="me-2"
               aria-label="Search"
+              ref={ref}
             />
-            <Button variant="outline-success">Search</Button>
-            <Button variant="outline-danger" style={{marginLeft:'5px'}} onClick={logOut} >Logout</Button>
+            <Button variant="outline-success" type='submit'>Search</Button>
           </Form>
+          <Button variant="outline-danger" style={{marginLeft:'5px'}} onClick={logOut} >Logout</Button>
+
         </Navbar.Collapse>
       </Container>
     </Navbar>

@@ -2,25 +2,86 @@ import {Component, } from "react";
 import Newsitem from "./Newsitem";
 import { Badge, Button, Spinner } from "react-bootstrap";
 import axios from 'axios';
-import PropTypes from 'prop-types'
+// import PropTypes from 'prop-types'
 
 const Axios = axios.create({
     baseURL: `http://localhost:5000`
   })
 
+const countries = {
+    'Argentina': 'ar',
+    'Australia': 'au',
+    'Austria': 'at',
+    'Belgium': 'be',
+    'Brazil': 'br',
+    'Britain':'gb',
+    'Bulgaria': 'bg',
+    'Canada': 'ca',
+    'China': 'cn',
+    'Colombia': 'co',
+    'Cuba': 'cu',
+    'Czech Republic': 'cz',
+    'Egypt': 'eg',
+    'France': 'fr',
+    'Germany': 'de',
+    'Greece': 'gr',
+    'Hong Kong': 'hk',
+    'Hungary': 'hu',
+    'India': 'in',
+    'Indonesia': 'id',
+    'Ireland': 'ie',
+    'Israel': 'il',
+    'Italy': 'it',
+    'Japan': 'jp',
+    'Latvia': 'lv',
+    'Lithuania': 'lt',
+    'Malaysia': 'my',
+    'Mexico': 'mx',
+    'Morocco': 'ma',
+    'Netherlands': 'nl',
+    'New Zealand': 'nz',
+    'Nigeria': 'ng',
+    'Norway': 'no',
+    'Philippines': 'ph',
+    'Poland': 'pl',
+    'Portugal': 'pt',
+    'Romania': 'ro',
+    'Russia': 'ru',
+    'Saudi Arabia': 'sa',
+    'Serbia': 'rs',
+    'Singapore': 'sg',
+    'Slovakia': 'sk',
+    'Slovenia': 'si',
+    'South Africa': 'za',
+    'South Korea': 'kr',
+    'Sweden': 'se',
+    'Switzerland': 'ch',
+    'Taiwan': 'tw',
+    'Thailand': 'th',
+    'Turkey': 'tr',
+    'UAE': 'ae',
+    'Ukraine': 'ua',
+    'United Kingdom': 'gb',
+    'United States': 'us',
+    'US':'us',
+    'UK':'gb',
+    'Venuzuela': 've'
+}
+
 class NewsContainer extends Component
 {
-    static defaultProps = {
-        country : 'in',
+        static defaultProps = {
+        country : 'United States',
         category : 'general',
-        type: 'head'
+        type: 'head',
+        q: 'bbc-news'
     }
 
-    static propTypes = {
-        country : PropTypes.string,
-        category : PropTypes.string,
-        type: PropTypes.string
-    }
+    // static propTypes = {
+    //     country : PropTypes.string,
+    //     category : PropTypes.string,
+    //     type: PropTypes.string
+    // }
 
     constructor()
     {
@@ -30,7 +91,7 @@ class NewsContainer extends Component
             items: [],
             page: 1,
             totalPages: 1,
-            country:'in'
+            error:false
         }
     }
 
@@ -41,7 +102,15 @@ class NewsContainer extends Component
         // let url = `https://newsapi.org/v2/top-headlines?category=${this.props.category}&country=${this.props.country}&apiKey=${this.state.apiKey1}&page=${this.state.page + value}&pageSize=20`;
         // let body  = await axios.get(url);
         // console.log(body);
-        const body = await Axios.get(`/${this.props.type}`, { params : { country: this.props.country, category: this.props.category, page: this.state.page + value }})
+
+        const country = this.props.country.length === 2 ? this.props.country : countries[`${this.props.country.charAt(0).toUpperCase() + this.props.country.slice(1)}`]
+        
+        const body = this.props.type === 'head'? 
+            await Axios.get(`/${this.props.type}`, { params : { country: country, category: this.props.category, page: this.state.page + value }})
+        : 
+            await Axios.get(`/${this.props.type}`, { params : { query: this.props.q, page: this.state.page + value }})
+
+        // console.log(this.props.country);
         // console.log(this.props.head);
         return body;
     }
@@ -49,11 +118,20 @@ class NewsContainer extends Component
     async componentDidMount()
     {
         let body = await this.apiCall(0);
+        // console.log(body);
         this.setState({
             isLoaded: true,
-            items:body?.data?.articles,
-            totalPages: Math.ceil(body?.data?.totalResults / 20)
+            items:body?.data?.body?.articles,
+            totalPages: Math.ceil(body?.data?.body?.totalResults / 20),
+            query: this.props.q === '' ? 'bbc-news' : this.props.q,
+            error:body?.data?.error
         })  
+
+        if(this.props.type === 'head') {
+            this.props.onQuery(true)
+        }
+        else 
+            this.props.onQuery(false)
         // console.log(body);
         // console.log(body);
     }
@@ -63,7 +141,7 @@ class NewsContainer extends Component
         this.setState({
             page:this.state.page - 1,
             isLoaded: true,
-            items:body.data.articles,
+            items:body?.data?.body?.articles,
         }) 
         // console.log(body.data.articles);
     }
@@ -73,18 +151,22 @@ class NewsContainer extends Component
         this.setState({
             page:this.state.page + 1,
             isLoaded: true,
-            items:body.data.articles,
+            items:body?.data?.body?.articles,
         })
         // console.log(body.data.articles);
     }
 
     render()
     {
+        if(this.state.error !== false) {
+            return this.state.error
+        }
         return(
             <div className="container pt-5">
                 <h1>
                     <Badge className='m-3' bg="success">Top Headlines</Badge>   
-                    <Badge bg="danger">{this.props.category.charAt(0).toUpperCase() + this.props.category.slice(1)}</Badge>
+                    <Badge bg="danger" className="m-2">{this.props.category.charAt(0).toUpperCase() + this.props.category.slice(1)}</Badge>
+                    <Badge bg='primary'>{ this.props.country.length === 2 ? Object.keys(countries).find(key => countries[key] === this.props.country) : this.props.country.charAt(0).toUpperCase() + this.props.country.slice(1)}</Badge>
                 </h1>
                 <br/>
                 <div className="row d-flex justify-content-around wrapper">

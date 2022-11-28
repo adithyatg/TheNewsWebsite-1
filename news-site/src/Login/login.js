@@ -26,7 +26,8 @@ export default class Login extends Component {
             isLogin: true,
             passwd: '',
             user: '',
-            token: false,
+            email:'',
+            passKey: false,
         }
         this.snackbarRef = createRef();
     }
@@ -35,15 +36,16 @@ export default class Login extends Component {
       sessionStorage.clear()
     }
 
-    _showSnackbarHandler = () => {
-      this.snackbarRef.current.openSnackBar('Email ID or Password Incorrect');
+    _showSnackbarHandler = (message) => {
+      this.snackbarRef.current.openSnackBar(message);
     }
 
     onSignIn = async (e) => {
       e.preventDefault();
       const body = {
         user:this.state.user, 
-        passwd:this.state.passwd
+        passwd:this.state.passwd,
+        email:this.state.email
       };
       // console.log(body);
       // const response = await axios({
@@ -58,14 +60,16 @@ export default class Login extends Component {
         }
       })
       this.props.setToken(response.data);
+      // console.log(response.data.token);
       if(!response.data.token) {
-        this._showSnackbarHandler()
+        this._showSnackbarHandler(response.data.error)
       }
 
       this.setState({
         user:'',
         passwd:'',
-        token:response.data.token
+        email:'',
+        passKey:response.data.token
       })
     }
     
@@ -73,7 +77,8 @@ export default class Login extends Component {
       e.preventDefault();
       const body = {
         user:this.state.user, 
-        passwd:this.state.passwd
+        passwd:this.state.passwd,
+        email:this.state.email
       };
       console.log(body);
       // const response = await axios({
@@ -82,15 +87,20 @@ export default class Login extends Component {
       //   data: JSON.stringify(body),
       //   // json: true,
       // })
-      await Axios.post('/signup', body, { 
+      const response = await Axios.post('/signup', body, { 
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       })
-      // console.log('response ',response.data);
+
+      console.log('response ',response.data.error.toString());
       // this.props.setToken(response.data);
+      if(response.data.error) {
+        this._showSnackbarHandler(response.data.error.toString())
+      }
       this.setState({
-        isLogin:true,
+        isLogin:response.data.error ? false : true,
+        email:'',
         user:'',
         passwd:''
       })
@@ -100,30 +110,35 @@ export default class Login extends Component {
       // console.log(e.currentTarget.name);
       e.currentTarget.name === 'email' ? 
         this.setState({
-          user:e.currentTarget.value
+          email:e.currentTarget.value
       }) :
+        e.currentTarget.name === 'user' ? 
         this.setState({
-          passwd:e.currentTarget.value
-        })
+          user:e.currentTarget.value
+        }) :
+          this.setState({
+            passwd:e.currentTarget.value
+          })
     }
 
-    onPress = (e) => {
+    onPress = () => {
       console.log("HI");
       this.setState({
         isLogin:!this.state.isLogin,
         user:'',
-        passwd:''
+        passwd:'',
+        email:''
       })
     }
     
-    handleClose = () => {
-      this.setState({
-          open:true
-      })
-    }
+    // handleClose = () => {
+    //   this.setState({
+    //       open:true
+    //   })
+    // }
     
     render() {
-        if(this.state.token) {
+        if(this.state.passKey) {
           return <Navigate replace to='/' />
         }
         else if(this.state.isLogin) {
@@ -136,7 +151,13 @@ export default class Login extends Component {
           )
         }
         else {
-          return <SignUp onChange={this.onChange} onPress={this.onPress} onSignUp={this.onSignUp} />
+          return (
+            <div>
+              <Snackbar ref = {this.snackbarRef} />
+
+              <SignUp onChange={this.onChange} onPress={this.onPress} onSignUp={this.onSignUp} />
+            </div>
+          )
         }
     }
 }
@@ -161,6 +182,9 @@ const SignIn = ({ onChange, onSignIn, onPress }) => {
               </div>
               <div className="d-flex justify-content-center">
                 <MDBInput wrapperClass='mb-4 w-75' label='Email address' name="email" autoFocus onChange={onChange} required type='email'/>
+              </div>
+              <div className="d-flex justify-content-center">
+                <MDBInput wrapperClass='mb-4 w-75' label='User Name' name="user" onChange={onChange} required type='text'/>
               </div>
               <div className="d-flex justify-content-center">
                 <MDBInput wrapperClass='mb-4 w-75' label='Password' name="passwd" onChange={onChange} required type='password'/>
@@ -223,8 +247,11 @@ const SignUp = ({ onChange, onSignUp, onPress}) => {
                   <p>Register for an account</p>
                 </div>
                 <div className="d-flex justify-content-center">
-                  <MDBInput wrapperClass='mb-4 w-75' label='Email address' name="email" onChange={onChange} required type='email'/>
+                  <MDBInput wrapperClass='mb-4 w-75' label='Email address' name="email" autoFocus onChange={onChange} required type='email'/>
                 </div>
+                <div className="d-flex justify-content-center">
+                <MDBInput wrapperClass='mb-4 w-75' label='User Name' name="user" onChange={onChange} required type='text'/>
+              </div>
                 <div className="d-flex justify-content-center">
                   <MDBInput wrapperClass='mb-4 w-75' label='Password' name="passwd" onChange={onChange} required type='password'/>
                 </div>
