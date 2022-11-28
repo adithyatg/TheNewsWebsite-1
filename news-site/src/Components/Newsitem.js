@@ -59,7 +59,7 @@ export class Newsitem extends Component {
   save = async e => {
     e.stopPropagation()
     let {title, url_image, description, url, content } = this.props;
-    console.log(getToken());
+    // console.log(getToken());
     const body = {
       user:getToken().userid,
       title:title,
@@ -85,9 +85,9 @@ export class Newsitem extends Component {
     return (
           <>
             <Snackbar ref = {this.snackbarRef} />
-            <Card className = 'card' onClick={this.openModal}>
+            <Card className = 'card aling-items-center' onClick={this.openModal}>
               {/* <Card.Img variant="top" src= {url_image} alt = 'Image Not Available' height = '250px'/> */}
-              <LazyLoadImage src = {url_image} width = '330px' height = '250px' alt='Image Not Available' 
+              <LazyLoadImage src = {url_image} width = '330px' height = '250px' alt='Image Not Available'  style={{"margin-top":"10px","border-radius":"10px",marginLeft:"10px"}}
                         placeholderSrc={ this.state.time <= 10 ? Loading : NotImage } />
               <Card.Body>
                     <Card.Title >{title ? title.slice(0,60) + "..." : ""}</Card.Title>

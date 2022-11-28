@@ -9,6 +9,8 @@ const newsApi = require('newsapi');
 const NewsAPI = require('newsapi');
 // const url = require('url');
 require('dotenv').config({path:'./.env'});
+var nodemailer = require('nodemailer');
+
 
 
 
@@ -94,10 +96,53 @@ app.post('/signup', (req, res, next) => {
     })
 })
 
+var isEqualsJson = (obj1,obj2)=>{
+    keys1 = Object.keys(obj1);
+    keys2 = Object.keys(obj2);
+
+    //return true when the two json has same length and all the properties has same value key by key
+    return keys1.length === keys2.length && Object.keys(obj1).every(key=>obj1[key]==obj2[key]);
+}
+
+app.post('/forgot', async (req, res, next) => {
+    try {
+        const client = new MongoClient(mongo_uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+        const db = client.db('Project')
+        const user = await db.collection('logins').findOne({user:req.body.user})
+        console.log("L");
+        var transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.email,
+              pass: process.env.passwd
+            }
+          });
+          
+          var mailOptions = {
+            from: process.env.email,
+            to: user?.email,
+            subject: 'Reset Password',
+            text: 'New passwd: webtech123'
+          };
+          
+          transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+              console.log(error);
+            } else {
+              console.log('Email sent: ' + info.response);
+            }
+          });
+          const hash = await bcrypt.hash('webtech123', saltRounds)
+          await db.collection('logins').updateOne({user:req.body.user}, { $set : { passwd: hash}})
+          res.end()
+    } catch(err){
+        console.log(err.toString());
+        next(err)
+    }
+})
+
 app.post('/save', async (req, res, next) => {
     try {
-        console.log("L")
-
         const client = new MongoClient(mongo_uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
         const db = client.db('Project')
         const body = {
@@ -110,21 +155,51 @@ app.post('/save', async (req, res, next) => {
         const user = await db.collection('logins').findOne({_id:ObjectId(req.body.user)})
         // console.log(req.body.user);
         // console.log(user);
-        const response = await db.collection('data').updateOne(
-            {user: user?.user},
-            { $push: { data : body } },
-            { upsert: true}
-        )
-        // console.log(response);
-        if(!response.acknowledged) next(new Error("Could not update"))
-        else 
-            res.send({
-                error: false,
-                message: "Updated"
-            }).end()
+        const data = await db.collection('data').findOne({user: user?.user})
+        let flag = false
+        for (i in data?.data ){
+            if(isEqualsJson(data?.data[i], body))
+                flag = true
+        }
+        if(flag) next(new Error("Already in Collection"))
+        else {
+            const response = await db.collection('data').updateOne(
+                {user: user?.user},
+                { $push: { data : body } },
+                { upsert: true}
+            )
+            // console.log(response);
+            if(!response.acknowledged) next(new Error("Could not update"))
+            else 
+                res.send({
+                    error: false,
+                    message: "Updated"
+                }).end()
+        }
         client.close()
     } catch(err) {
         console.log(err.toString());
+        next(err)
+    }
+})
+
+app.get('/collection', async (req, res, next) => {
+    try {
+        const client = new MongoClient(mongo_uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+        const db = client.db('Project')
+        const user = await db.collection('logins').findOne({_id:ObjectId(req.query.userid)})
+        let data = await db.collection('data').findOne({user: user?.user})
+        data = data?.data
+        let length = data.length
+        data = data.slice( (req.query.page - 1)*20, (req.query.page) *20 )
+        // console.log(data);
+        res.send({
+            body:data,
+            error:false,
+            totalResults:length
+        })
+        client.close()
+    } catch(err) {
         next(err)
     }
 })
@@ -133,7 +208,7 @@ app.get('/head', async (req, res, next) => {
     
     try {
 
-        const newsapi = new newsApi(process.env.API_KEY_2);
+        const newsapi = new newsApi(process.env.API_KEY_1);
         // To query /v2/top-headlines
         // All options passed to topHeadlines are optional, but you need to include at least one of them
         newsapi.v2.topHeadlines({
@@ -171,13 +246,14 @@ app.get('/head', async (req, res, next) => {
     // // }
 })
 
+
 app.get('/everything', async (req, res, next) => {
        
     try {
-        const newsapi = new NewsAPI(process.env.API_KEY_2);
+        const newsapi = new NewsAPI(process.env.API_KEY_1);
         // console.log(req.query.query);
         const body = await newsapi.v2.everything({
-                q:req.query.query,
+                q:req.query.query === '' ? 'sports' : req.query.query,
                 page: req.query.page,
                 pageSize: 20,
             })
@@ -194,15 +270,24 @@ app.get('/everything', async (req, res, next) => {
 
 app.get('/memes', async (req, res, next) => {
     try {
-        const url = process.env.COMIC_URL
-        const api = process.env.COMIC_API_2
-        const result = `${url}?api-key=${api}&number=10&offset=${req.query.page}`
-        console.log(result);
+        const url = process.env.COMIC_URL_2
         // const body = await axios.get(result)
-        const body = await axios.get(`${url}?api-key=${api}&number=10&offset=${req.query.page}`)
+        const body = req.query.query === '' ? 
+                await axios.get(`${url}1000`)
+                : await axios.get(`${url}${req.query.query}/100`)
         // const body = await axios.get('https://api.humorapi.com/memes/search?api-key=e1b16e2f50c040408d39d6a371b31395&number=10&offset=2')
-        console.log(body);
-        res.send(body.data.toString()).end()
+        // console.log(body);
+        if(!body || body?.data?.count <= 0) next(new Error("Page Not found"))
+        else {
+            // data = body?.data?.memes
+            // console.log(data);
+            data = body?.data?.memes
+            res.send({
+                error:false,
+                body:data,
+                totalResults:body.count
+            }).end()
+        }
     } catch(err) {
         next(err)
     }
@@ -210,7 +295,7 @@ app.get('/memes', async (req, res, next) => {
 
 app.get('/sources', async (req, res, next) => {
     try {
-        const newsapi = new NewsAPI(process.env.API_KEY_2);
+        const newsapi = new NewsAPI(process.env.API_KEY_1);
         console.log(req.query.query);
         console.log(req.query.sources);
         const body = await newsapi.v2.everything({

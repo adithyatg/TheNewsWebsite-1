@@ -7,6 +7,7 @@ import {
   }
   from 'mdb-react-ui-kit';
 import Image from '../Assets/The News Website.png'
+import Image1 from '../Assets/LoginSideImg.jpg'
 import './index.css'
 import Styles from './snackbar.module.css'
 import { Button } from "react-bootstrap";
@@ -36,11 +37,16 @@ export default class Login extends Component {
       sessionStorage.clear()
     }
 
+    timer = () => {
+      this._showSnackbarHandler('Connection Error')
+      
+    }
+
     _showSnackbarHandler = (message) => {
       this.snackbarRef.current.openSnackBar(message);
     }
 
-    onSignIn = async (e) => {
+    onSignIn = (e) => {
       e.preventDefault();
       const body = {
         user:this.state.user, 
@@ -54,23 +60,27 @@ export default class Login extends Component {
       //   data: JSON.stringify(body),
       //   // json: true,
       // })
-      const response = await Axios.post('/login', body, { 
+      const t = setTimeout(this.timer, 10000)
+      Axios.post('/login', body, { 
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       })
-      this.props.setToken(response.data);
-      // console.log(response.data.token);
-      if(!response.data.token) {
-        this._showSnackbarHandler(response.data.error)
-      }
-
-      this.setState({
-        user:'',
-        passwd:'',
-        email:'',
-        passKey:response.data.token
+      .then(response => {
+          this.props.setToken(response.data);
+        // console.log(response.data.token);
+        if(!response.data.token) {
+          this._showSnackbarHandler(response.data.error)
+        }
+        clearTimeout(t)
+        this.setState({
+          user:'',
+          passwd:'',
+          email:'',
+          passKey:response.data.token
+        })
       })
+      
     }
     
     onSignUp = async (e) => {
@@ -146,7 +156,7 @@ export default class Login extends Component {
               <div >
                 <Snackbar ref = {this.snackbarRef} />
 
-                <SignIn onChange={this.onChange} onPress={this.onPress} onSignIn={this.onSignIn} />
+                <SignIn onChange={this.onChange} onPress={this.onPress} onSignIn={this.onSignIn} user = {this.state.user} email = {this.state.email}/>
               </div>
           )
         }
@@ -161,7 +171,16 @@ export default class Login extends Component {
         }
     }
 }
-const SignIn = ({ onChange, onSignIn, onPress }) => {
+
+const SignIn = ({ onChange, onSignIn, onPress, user, email }) => {
+
+  const forgot = async () => {
+    await Axios.post('/forgot', { user: user} ,{ 
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    })
+  }
   return (
     <MDBContainer className="my-5 gradient-form">
   
@@ -181,10 +200,10 @@ const SignIn = ({ onChange, onSignIn, onPress }) => {
                 <p>Please login to your account</p>
               </div>
               <div className="d-flex justify-content-center">
-                <MDBInput wrapperClass='mb-4 w-75' label='Email address' name="email" autoFocus onChange={onChange} required type='email'/>
+                <MDBInput wrapperClass='mb-4 w-75' label='User Name' name="user" autoFocus onChange={onChange} required={ email === '' } type='text'/>
               </div>
               <div className="d-flex justify-content-center">
-                <MDBInput wrapperClass='mb-4 w-75' label='User Name' name="user" onChange={onChange} required type='text'/>
+                <MDBInput wrapperClass='mb-4 w-75' label='Email address' name="email" onChange={onChange} required={ user === ''} type='email'/>
               </div>
               <div className="d-flex justify-content-center">
                 <MDBInput wrapperClass='mb-4 w-75' label='Password' name="passwd" onChange={onChange} required type='password'/>
@@ -193,7 +212,7 @@ const SignIn = ({ onChange, onSignIn, onPress }) => {
               {/* <MDBBtn className="mb-4 w-100 gradient-custom-2" type="submit">Sign in</MDBBtn> */}
                 <Button className="mb-4 w-25 gradient-custom-2" type='submit'>Sign in </Button>
                 <br/>
-                <a className="text-muted" href="#!">Forgot password?</a>
+                <Button className="text-muted" onClick={forgot}>Forgot password?</Button>
               </div>
           </form>
 
@@ -215,6 +234,7 @@ const SignIn = ({ onChange, onSignIn, onPress }) => {
 
           <div className="text-white px-3 py-4 p-md-5 mx-md-4">
             <h4 className="mb-4">Login to our website</h4>
+            <img src={Image1} style={{width: '500px'}} alt="logo" />
             <p className="small mb-0"></p>
           </div>
 
@@ -228,6 +248,7 @@ const SignIn = ({ onChange, onSignIn, onPress }) => {
   )
 }
 const SignUp = ({ onChange, onSignUp, onPress}) => {
+
     return (
       <MDBContainer className="my-5 gradient-form">
     
@@ -282,6 +303,7 @@ const SignUp = ({ onChange, onSignUp, onPress}) => {
   
             <div className="text-white px-3 py-4 p-md-5 mx-md-4">
               <h4 className="mb-4">Sign up to our website</h4>
+              <img src={Image1} style={{width: '500px'}} alt="logo" />
               <p className="small mb-0"></p>
             </div>
   

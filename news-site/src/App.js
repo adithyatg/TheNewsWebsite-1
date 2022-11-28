@@ -9,6 +9,8 @@ import {Component} from 'react';
 import { setToken, getToken } from './Login/useToken.js'
 import Login from './Login/login';
 import NewsContainerSources from './Components/Sources';
+import Collection from './Components/UserCollection';
+import Memes from './Components/Memes';
 
 export class App extends Component {
   constructor() {
@@ -73,9 +75,11 @@ export class App extends Component {
         {/* <StyledLink to='/'>Home</StyledLink>
         <StyledLink to='/Comp'>Component</StyledLink> */}
               <Routes>
+                    <Route exact path = '/' element = {<Home/>} />
+                    <Route exact path = '/collection' element = {<Collection/>} />
+                    <Route exact path = '/memes' element = {<Memes key = {this.state.query} q = {this.state.query} onQuery = {this.onQuery} />} />
                     <Route exact path = '/sources' element = {<NewsContainerSources key = {this.state.query} q = {this.state.query} onQuery = {this.onQuery} source = {this.state.source} /> } />
                     <Route exact path = '/login' element = {<Login setToken = {this.handle}/>} />
-                    <Route exact path = '/' element = {<Home/>} />
                     <Route exact path = '/everything' element = {<NewsContainer key = {this.state.query} type='everything' q = {this.state.query} onQuery = {this.onQuery} />} />
                     <Route exact path = '/head' element = {<NewsContainer key = {this.state.country} country = {this.state.country} category = 'general' onQuery = {this.onQuery} />} />
                     <Route exact path = '/head/business' element = {<NewsContainer key = {this.state.country} country = {this.state.country} category = 'business' onQuery = {this.onQuery} />} />

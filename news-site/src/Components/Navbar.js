@@ -52,6 +52,12 @@ function NavBar({ logOut, handleSearch, type }) {
             <Nav.Link href="/sources">
               Sources
             </Nav.Link>
+            <Nav.Link href="/collection">
+              My Collection
+            </Nav.Link>
+            <Nav.Link href="/memes">
+              Memes
+            </Nav.Link>
           </Nav>
           <Form className="d-flex" onSubmit={handleSubmit}>
             <Form.Control 
